@@ -1,9 +1,26 @@
 package go_rocket
 
-import "github.com/adrianmo/go-nmea"
+import (
+	"encoding/json"
+	"github.com/adrianmo/go-nmea"
+	"sync"
+)
 
 type RocketInfo struct {
-	lastGPSTimeStamp nmea.Time
-	latitude, longitude float64
+	gps nmea.RMC
+
+	lock sync.Mutex
 }
 
+func (this *RocketInfo) UpdateGPS(gps nmea.RMC) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	this.gps = gps
+}
+
+func (this *RocketInfo) MarshalJSON() ([] byte, error) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+
+	return json.Marshal(this.gps)
+}
