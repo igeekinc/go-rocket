@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type GPSReporter struct {
+type RocketReporter struct {
 	rocketInfo *RocketInfo
 	port        string
 	baudRate    uint
@@ -16,16 +16,16 @@ type GPSReporter struct {
 	keepRunning bool
 }
 
-func InitGPSReporter(rocketInfo *RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReporter GPSReporter, err error) {
-	gpsReporter.rocketInfo = rocketInfo
-	gpsReporter.port = port
-	gpsReporter.baudRate = baudRate
-	gpsReporter.dataBits = dataBits
-	gpsReporter.stopBits = stopBits
-	return gpsReporter, nil
+func InitRocketReporter(rocketInfo *RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReporter RocketReporter, err error) {
+	rocketReporter.rocketInfo = rocketInfo
+	rocketReporter.port = port
+	rocketReporter.baudRate = baudRate
+	rocketReporter.dataBits = dataBits
+	rocketReporter.stopBits = stopBits
+	return rocketReporter, nil
 }
 
-func (this *GPSReporter) GPSReporterLoop() (err error) {
+func (this *RocketReporter) RocketReporterLoop() (err error) {
 	options := serial.OpenOptions{
 		PortName:        this.port,
 		BaudRate:        this.baudRate,

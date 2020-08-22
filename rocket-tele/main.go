@@ -12,7 +12,7 @@ func main() {
 		log.Fatal(err)
 	}
 	go gpsLoop(gpsReader)
-	gpsReporter, err := go_rocket.InitGPSReporter(ri, "/dev/ttyUSB0", 57600, 8, 1)
+	gpsReporter, err := go_rocket.InitRocketReporter(ri, "/dev/ttyUSB0", 57600, 8, 1)
 	reporterLoop(gpsReporter)
 }
 
@@ -23,8 +23,8 @@ func gpsLoop(gr go_rocket.GPSReader) {
 	}
 }
 
-func reporterLoop(gr go_rocket.GPSReporter) {
-	err := gr.GPSReporterLoop()
+func reporterLoop(gr go_rocket.RocketReporter) {
+	err := gr.RocketReporterLoop()
 	if err != nil {
 		log.Fatal(err)
 	}
