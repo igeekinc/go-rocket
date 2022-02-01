@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
 	"github.com/jacobsa/go-serial/serial"
 )
 
 type RocketReceiver struct {
-	rocketInfo  *RocketInfo
+	rocketInfo  *go_rocket_core.RocketInfo
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -16,7 +17,7 @@ type RocketReceiver struct {
 	keepRunning bool
 }
 
-func InitRocketReceiver(rocketInfo *RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReceiver RocketReceiver, err error) {
+func InitRocketReceiver(rocketInfo *go_rocket_core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReceiver RocketReceiver, err error) {
 	rocketReceiver.rocketInfo = rocketInfo
 	rocketReceiver.port = port
 	rocketReceiver.baudRate = baudRate
@@ -47,7 +48,7 @@ func (this *RocketReceiver) RocketReceiverLoop() (err error) {
 		jsonBytes, err := serialPortReader.ReadBytes('\n')
 		if (err == nil) {
 			jsonStr := string(jsonBytes)
-			var readInfo RocketInfo
+			var readInfo go_rocket_core.RocketInfo
 			err = json.Unmarshal(jsonBytes, &readInfo)
 			if err == nil {
 				fmt.Printf("Updating from %s\n", jsonStr)

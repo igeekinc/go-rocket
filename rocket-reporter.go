@@ -3,12 +3,13 @@ package go_rocket
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
 	"github.com/jacobsa/go-serial/serial"
 	"time"
 )
 
 type RocketReporter struct {
-	rocketInfo *RocketInfo
+	rocketInfo *go_rocket_core.RocketInfo
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -16,7 +17,7 @@ type RocketReporter struct {
 	keepRunning bool
 }
 
-func InitRocketReporter(rocketInfo *RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReporter RocketReporter, err error) {
+func InitRocketReporter(rocketInfo *go_rocket_core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReporter RocketReporter, err error) {
 	rocketReporter.rocketInfo = rocketInfo
 	rocketReporter.port = port
 	rocketReporter.baudRate = baudRate

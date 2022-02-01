@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/adrianmo/go-nmea"
+	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
 	"github.com/jacobsa/go-serial/serial"
 )
 
 type GPSReader struct {
-	rocketInfo  *RocketInfo
+	rocketInfo  *go_rocket_core.RocketInfo
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -16,7 +17,7 @@ type GPSReader struct {
 	keepRunning bool
 }
 
-func InitGPSReader(rocketInfo * RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReader GPSReader, err error) {
+func InitGPSReader(rocketInfo *go_rocket_core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReader GPSReader, err error) {
 	gpsReader.rocketInfo = rocketInfo
 	gpsReader.port = port
 	gpsReader.baudRate = baudRate

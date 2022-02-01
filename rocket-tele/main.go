@@ -2,11 +2,12 @@ package main
 
 import (
 	go_rocket "github.com/igeekinc/go-rocket"
+	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
 	"log"
 )
 
 func main() {
-	ri := & go_rocket.RocketInfo{}
+	ri := & go_rocket_core.RocketInfo{}
 	gpsReader, err := go_rocket.InitGPSReader(ri, "/dev/ttyS0", 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)

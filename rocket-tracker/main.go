@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	go_rocket "github.com/igeekinc/go-rocket"
+	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
 	"log"
 	"math"
 	"time"
@@ -16,14 +17,14 @@ func main() {
 		app.Exec()
 	*/
 
-	ri := &go_rocket.RocketInfo{}
+	ri := &go_rocket_core.RocketInfo{}
 	rocketReceiver, err := go_rocket.InitRocketReceiver(ri, "/dev/tty.SLAB_USBtoUART", 57600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	go receiverLoop(rocketReceiver)
 
-	ourPos := &go_rocket.RocketInfo{}
+	ourPos := &go_rocket_core.RocketInfo{}
 	gpsReader, err := go_rocket.InitGPSReader(ourPos, "/dev/tty.usbmodem14222101", 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
