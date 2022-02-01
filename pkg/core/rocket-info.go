@@ -1,4 +1,4 @@
-package go_rocket_core
+package core
 
 import (
 	"encoding/json"

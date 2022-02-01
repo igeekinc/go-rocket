@@ -1,30 +1,30 @@
 package main
 
 import (
-	go_rocket "github.com/igeekinc/go-rocket"
-	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
+	"github.com/igeekinc/go-rocket/pkg/core"
+	"github.com/igeekinc/go-rocket/pkg/rocket"
 	"log"
 )
 
 func main() {
-	ri := & go_rocket_core.RocketInfo{}
-	gpsReader, err := go_rocket.InitGPSReader(ri, "/dev/ttyS0", 9600, 8, 1)
+	ri := & core.RocketInfo{}
+	gpsReader, err := core.InitGPSReader(ri, "/dev/ttyS0", 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	go gpsLoop(gpsReader)
-	gpsReporter, err := go_rocket.InitRocketReporter(ri, "/dev/ttyUSB0", 57600, 8, 1)
+	gpsReporter, err := rocket.InitRocketReporter(ri, "/dev/ttyUSB0", 57600, 8, 1)
 	reporterLoop(gpsReporter)
 }
 
-func gpsLoop(gr go_rocket.GPSReader) {
+func gpsLoop(gr core.GPSReader) {
 	err := gr.UpdateFromGPSLoop()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func reporterLoop(gr go_rocket.RocketReporter) {
+func reporterLoop(gr rocket.RocketReporter) {
 	err := gr.RocketReporterLoop()
 	if err != nil {
 		log.Fatal(err)

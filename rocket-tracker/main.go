@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	go_rocket "github.com/igeekinc/go-rocket"
-	"github.com/igeekinc/go-rocket/pkg/go-rocket-core"
+	"github.com/igeekinc/go-rocket/pkg/core"
+	ground2 "github.com/igeekinc/go-rocket/pkg/ground"
 	"log"
 	"math"
 	"time"
@@ -17,15 +17,15 @@ func main() {
 		app.Exec()
 	*/
 
-	ri := &go_rocket_core.RocketInfo{}
-	rocketReceiver, err := go_rocket.InitRocketReceiver(ri, "/dev/tty.SLAB_USBtoUART", 57600, 8, 1)
+	ri := &core.RocketInfo{}
+	rocketReceiver, err := ground2.InitRocketReceiver(ri, "/dev/tty.SLAB_USBtoUART", 57600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	go receiverLoop(rocketReceiver)
 
-	ourPos := &go_rocket_core.RocketInfo{}
-	gpsReader, err := go_rocket.InitGPSReader(ourPos, "/dev/tty.usbmodem14222101", 9600, 8, 1)
+	ourPos := &core.RocketInfo{}
+	gpsReader, err := core.InitGPSReader(ourPos, "/dev/tty.usbmodem14222101", 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,14 +40,14 @@ func main() {
 	}
 }
 
-func gpsLoop(gr go_rocket.GPSReader) {
+func gpsLoop(gr core.GPSReader) {
 	err := gr.UpdateFromGPSLoop()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func receiverLoop(rec go_rocket.RocketReceiver) {
+func receiverLoop(rec ground2.RocketReceiver) {
 	err := rec.RocketReceiverLoop()
 	if err != nil {
 		log.Fatal(err)
