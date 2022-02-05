@@ -47,6 +47,8 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 	defer serialPort.Close()
 
 	this.keepRunning = true
+        
+        go this.videoStarter(serialPort)
 
 	for this.keepRunning {
 		rj, err := json.Marshal(this.rocketInfo)
@@ -68,21 +70,25 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 }
 
 func (this *RocketReporter) videoStarter(serialPort io.Reader) {
+	fmt.Println("====================")
+	fmt.Println("videoStarter running")
+	fmt.Println("====================")
 	scanner := bufio.NewScanner(serialPort)
 	for scanner.Scan() {
 		text := scanner.Text()
+		fmt.Println("====================")
 		fmt.Println(text)
+		fmt.Println("====================")
 		if text == "V" {
 			this.video = true
-			video := exec.Command("/usr/bin/raspivid", "--timeout", "6000000",
+			video := exec.Command("/usr/bin/raspivid", "--timeout", "600000",
 				"-o", this.nextVidFile())
 			video.Run()
 			this.video = false
 		}
 	}
-
 }
 
 func (this *RocketReporter) nextVidFile() string {
-	return "vid.mov"
+	return "/home/pi/Videos/vid.mov"
 }
