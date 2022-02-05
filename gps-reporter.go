@@ -48,6 +48,8 @@ func (this *GPSReporter) GPSReporterLoop() (err error) {
 		if err != nil {
 			return err
 		}
+		rj = append(rj, '\r')
+		rj = append(rj, '\n')
 		str := string(rj)
 		fmt.Println(str)
 		bytesWritten, err := serialPort.Write(rj)
