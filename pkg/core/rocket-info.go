@@ -1,4 +1,4 @@
-package go_rocket
+package core
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 )
 
 type RocketInfo struct {
-	gps nmea.RMC
+	GPS nmea.RMC
 
 	lock sync.Mutex
 }
@@ -15,12 +15,20 @@ type RocketInfo struct {
 func (this *RocketInfo) UpdateGPS(gps nmea.RMC) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	this.gps = gps
+	this.GPS = gps
 }
 
 func (this *RocketInfo) MarshalJSON() ([] byte, error) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
 
-	return json.Marshal(this.gps)
+	return json.Marshal(this.GPS)
+}
+
+
+func (this *RocketInfo) UnmarshalJSON(buf []byte) error {
+	if err := json.Unmarshal(buf, &this.GPS); err != nil {
+		return err
+	}
+	return nil
 }

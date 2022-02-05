@@ -1,14 +1,15 @@
-package go_rocket
+package rocket
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/jacobsa/go-serial/serial"
 	"time"
 )
 
-type GPSReporter struct {
-	rocketInfo *RocketInfo
+type RocketReporter struct {
+	rocketInfo *core.RocketInfo
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -16,16 +17,16 @@ type GPSReporter struct {
 	keepRunning bool
 }
 
-func InitGPSReporter(rocketInfo *RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReporter GPSReporter, err error) {
-	gpsReporter.rocketInfo = rocketInfo
-	gpsReporter.port = port
-	gpsReporter.baudRate = baudRate
-	gpsReporter.dataBits = dataBits
-	gpsReporter.stopBits = stopBits
-	return gpsReporter, nil
+func InitRocketReporter(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReporter RocketReporter, err error) {
+	rocketReporter.rocketInfo = rocketInfo
+	rocketReporter.port = port
+	rocketReporter.baudRate = baudRate
+	rocketReporter.dataBits = dataBits
+	rocketReporter.stopBits = stopBits
+	return rocketReporter, nil
 }
 
-func (this *GPSReporter) GPSReporterLoop() (err error) {
+func (this *RocketReporter) RocketReporterLoop() (err error) {
 	options := serial.OpenOptions{
 		PortName:        this.port,
 		BaudRate:        this.baudRate,
