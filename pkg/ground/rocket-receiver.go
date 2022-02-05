@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/jacobsa/go-serial/serial"
+	"io"
 )
 
 type RocketReceiver struct {
@@ -15,6 +16,7 @@ type RocketReceiver struct {
 	dataBits    uint
 	stopBits    uint
 	keepRunning bool
+	serialPort io.ReadWriteCloser
 }
 
 func InitRocketReceiver(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReceiver RocketReceiver, err error) {
@@ -39,6 +41,7 @@ func (this *RocketReceiver) RocketReceiverLoop() (err error) {
 	if err != nil {
 		return
 	}
+	this.serialPort = serialPort
 	defer serialPort.Close()
 
 	serialPortReader := bufio.NewReaderSize(serialPort, 16*1024)

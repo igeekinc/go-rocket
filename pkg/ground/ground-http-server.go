@@ -32,7 +32,9 @@ func NewGroundHTTPServer(httpRoot string, httpPort int, receiver * RocketReceive
 	http.HandleFunc("/", ghs.indexPage)
 
 	requestMap := map[string]func(writer http.ResponseWriter, request *http.Request){
-
+		"video":func(writer http.ResponseWriter, request *http.Request) {
+			ghs.video(writer, request)
+		},
 	}
 	for request, function := range requestMap {
 		http.HandleFunc("/api/"+request, function)
@@ -86,4 +88,8 @@ func (recv * GroundHTTPServer) indexPage(writer http.ResponseWriter, request *ht
 	}
 
 	template.Execute(writer, &pi)
+}
+
+func (recv * GroundHTTPServer) video(writer http.ResponseWriter, request *http.Request) {
+	recv.receiver.serialPort.Write([]byte("V\n"))
 }
