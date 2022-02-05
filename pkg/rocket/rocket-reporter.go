@@ -1,10 +1,13 @@
 package rocket
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/jacobsa/go-serial/serial"
+	"io"
+	"os/exec"
 	"time"
 )
 
@@ -15,6 +18,7 @@ type RocketReporter struct {
 	dataBits    uint
 	stopBits    uint
 	keepRunning bool
+	video       bool
 }
 
 func InitRocketReporter(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReporter RocketReporter, err error) {
@@ -63,3 +67,22 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 	return
 }
 
+func (this *RocketReporter) videoStarter(serialPort io.Reader) {
+	scanner := bufio.NewScanner(serialPort)
+	for scanner.Scan() {
+		text := scanner.Text()
+		fmt.Println(text)
+		if text == "V" {
+			this.video = true
+			video := exec.Command("/usr/bin/raspivid", "--timeout", "6000000",
+				"-o", this.nextVidFile())
+			video.Run()
+			this.video = false
+		}
+	}
+
+}
+
+func (this *RocketReporter) nextVidFile() string {
+	return "vid.mov"
+}
