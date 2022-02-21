@@ -25,26 +25,8 @@ func main() {
 	}
 	go receiverLoop(rocketReceiver)
 
-	/*
-	ourPos := &core.RocketInfo{}
-	gpsReader, err := core.InitGPSReader(ourPos, "/dev/tty.usbmodem14222101", 9600, 8, 1)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go gpsLoop(gpsReader)
-
-	for true {
-		distance := Distance(ourPos.GPS.Latitude, ourPos.GPS.Longitude, ri.GPS.Latitude, ri.GPS.Longitude)
-		fmt.Printf("Distance to rocket is %f meters\n", distance)
-		time.Sleep(1 * time.Second)
-
-	}
-	 */
-
-	httpServer := ground.NewGroundHTTPServer(".", 8080, &rocketReceiver)
+	httpServer := ground.NewGroundHTTPServer(".", 8080, rocketReceiver)
 	httpServer.Serve()
-	//rocket.RunRocketHTTPServer(".", 8080)
 }
 
 func gpsLoop(gr core.GPSReader) {
@@ -54,7 +36,7 @@ func gpsLoop(gr core.GPSReader) {
 	}
 }
 
-func receiverLoop(rec ground.RocketReceiver) {
+func receiverLoop(rec *ground.RocketReceiver) {
 	err := rec.RocketReceiverLoop()
 	if err != nil {
 		log.Fatal(err)

@@ -7,18 +7,18 @@ import (
 	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/jacobsa/go-serial/serial"
 	"io"
+	"io/ioutil"
 	"os/exec"
 	"time"
 )
 
 type RocketReporter struct {
-	rocketInfo *core.RocketInfo
+	rocketInfo  *core.RocketInfo
 	port        string
 	baudRate    uint
 	dataBits    uint
 	stopBits    uint
 	keepRunning bool
-	video       bool
 }
 
 func InitRocketReporter(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReporter RocketReporter, err error) {
@@ -39,13 +39,13 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 		MinimumReadSize: 4,
 	}
 
-
 	serialPort, err := serial.Open(options)
 	if err != nil {
 		return
 	}
 	defer serialPort.Close()
 
+	go this.videoStarter(serialPort)
 	this.keepRunning = true
         
         go this.videoStarter(serialPort)
@@ -80,15 +80,37 @@ func (this *RocketReporter) videoStarter(serialPort io.Reader) {
 		fmt.Println(text)
 		fmt.Println("====================")
 		if text == "V" {
-			this.video = true
-			video := exec.Command("/usr/bin/raspivid", "--timeout", "600000",
-				"-o", this.nextVidFile())
+			videoFile := this.nextVidFile()
+			this.rocketInfo.SetRecording(true, videoFile)
+			video := exec.Command("/usr/bin/libcamera-vid", "-t", "10000",
+				"-o", videoFile)
+			fmt.Printf("Starting video, cmd = %v\n", video)
 			video.Run()
-			this.video = false
+			this.rocketInfo.SetRecording(false, videoFile)
 		}
 	}
 }
 
+const kVidDir = "/videos"
+
 func (this *RocketReporter) nextVidFile() string {
-	return "/home/pi/Videos/vid.mov"
+	info, err := ioutil.ReadDir(kVidDir)
+	if err != nil {
+		panic(err) // If we're having errors reading the video dir, just bomb out
+	}
+	nextVidNum := 0
+	for _, curFile := range info {
+		var curVidNum int
+		n, err := fmt.Sscanf(curFile.Name(), "vid%d.mov", &curVidNum)
+		if err != nil {
+			panic(err)
+		}
+		if n == 1 {
+			if curVidNum > nextVidNum {
+				nextVidNum = curVidNum
+			}
+		}
+	}
+	nextVidNum++
+	return fmt.Sprintf("%s/vid%d.mov", kVidDir, nextVidNum)
 }

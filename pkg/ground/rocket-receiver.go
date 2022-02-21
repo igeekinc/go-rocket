@@ -16,16 +16,20 @@ type RocketReceiver struct {
 	dataBits    uint
 	stopBits    uint
 	keepRunning bool
-	serialPort io.ReadWriteCloser
+	serialPort  io.ReadWriteCloser
 }
 
-func InitRocketReceiver(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (rocketReceiver RocketReceiver, err error) {
-	rocketReceiver.rocketInfo = rocketInfo
-	rocketReceiver.port = port
-	rocketReceiver.baudRate = baudRate
-	rocketReceiver.dataBits = dataBits
-	rocketReceiver.stopBits = stopBits
-	return rocketReceiver, nil
+func InitRocketReceiver(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (*RocketReceiver, error) {
+	rocketReceiver := RocketReceiver{
+		rocketInfo:  rocketInfo,
+		port:        port,
+		baudRate:    baudRate,
+		dataBits:    dataBits,
+		stopBits:    stopBits,
+		keepRunning: false,
+		serialPort:  nil,
+	}
+	return &rocketReceiver, nil
 }
 
 func (this *RocketReceiver) RocketReceiverLoop() (err error) {
@@ -42,14 +46,14 @@ func (this *RocketReceiver) RocketReceiverLoop() (err error) {
 		return
 	}
 	this.serialPort = serialPort
-	defer serialPort.Close()
+	defer this.serialPort.Close()
 
-	serialPortReader := bufio.NewReaderSize(serialPort, 16*1024)
+	serialPortReader := bufio.NewReaderSize(this.serialPort, 16*1024)
 	this.keepRunning = true
 
 	for this.keepRunning {
 		jsonBytes, err := serialPortReader.ReadBytes('\n')
-		if (err == nil) {
+		if err == nil {
 			jsonStr := string(jsonBytes)
 			var readInfo core.RocketInfo
 			err = json.Unmarshal(jsonBytes, &readInfo)
