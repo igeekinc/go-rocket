@@ -45,7 +45,7 @@ func NewGroundHTTPServer(httpRoot string, httpPort int, receiver *RocketReceiver
 
 func (recv *GroundHTTPServer) UpdateGPSLoop() {
 	for true {
-		curPos := recv.receiver.rocketInfo.GPS
+		curPos := recv.receiver.RocketInfo.GPS
 		appendPos := true
 		if len(recv.previousPositions) > 0 {
 			ourPos := recv.previousPositions[len(recv.previousPositions)-1]
@@ -87,20 +87,14 @@ func (recv *GroundHTTPServer) indexPage(writer http.ResponseWriter, request *htt
 		CurrentLat:        currentPos.Latitude,
 		CurrentLong:       currentPos.Longitude,
 		PreviousPositions: recv.previousPositions,
-		Recording:         recv.receiver.rocketInfo.Recording,
-		VideoFile:         recv.receiver.rocketInfo.VideoFile,
+		Recording:         recv.receiver.RocketInfo.Recording,
+		VideoFile:         recv.receiver.RocketInfo.VideoFile,
 	}
 
 	template.Execute(writer, &pi)
 }
 
 func (recv *GroundHTTPServer) video(writer http.ResponseWriter, request *http.Request) {
-	fmt.Printf("Sending video cmd to rocket\n")
-	written, err := recv.receiver.serialPort.Write([]byte("\n\nV\n"))
-	if err != nil {
-		fmt.Printf("Wrote %d bytes, got error %v\n", written, err)
-	} else {
-		fmt.Printf("Wrote %d bytes\n", written)
-	}
+	recv.receiver.SendLaunchMode()
 	http.Redirect(writer, request, "/index.html", http.StatusSeeOther)
 }

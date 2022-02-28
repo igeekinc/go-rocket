@@ -4,13 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/adrianmo/go-nmea"
 	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/jacobsa/go-serial/serial"
 	"io"
 )
 
 type RocketReceiver struct {
-	rocketInfo  *core.RocketInfo
+	RocketInfo  *core.RocketInfo
+	GPS         nmea.RMC
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -21,7 +23,7 @@ type RocketReceiver struct {
 
 func InitRocketReceiver(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (*RocketReceiver, error) {
 	rocketReceiver := RocketReceiver{
-		rocketInfo:  rocketInfo,
+		RocketInfo:  rocketInfo,
 		port:        port,
 		baudRate:    baudRate,
 		dataBits:    dataBits,
@@ -32,12 +34,12 @@ func InitRocketReceiver(rocketInfo *core.RocketInfo, port string, baudRate uint,
 	return &rocketReceiver, nil
 }
 
-func (this *RocketReceiver) RocketReceiverLoop() (err error) {
+func (recv *RocketReceiver) RocketReceiverLoop() (err error) {
 	options := serial.OpenOptions{
-		PortName:        this.port,
-		BaudRate:        this.baudRate,
-		DataBits:        this.dataBits,
-		StopBits:        this.stopBits,
+		PortName:        recv.port,
+		BaudRate:        recv.baudRate,
+		DataBits:        recv.dataBits,
+		StopBits:        recv.stopBits,
 		MinimumReadSize: 4,
 	}
 
@@ -45,13 +47,13 @@ func (this *RocketReceiver) RocketReceiverLoop() (err error) {
 	if err != nil {
 		return
 	}
-	this.serialPort = serialPort
-	defer this.serialPort.Close()
+	recv.serialPort = serialPort
+	defer recv.serialPort.Close()
 
-	serialPortReader := bufio.NewReaderSize(this.serialPort, 16*1024)
-	this.keepRunning = true
+	serialPortReader := bufio.NewReaderSize(recv.serialPort, 16*1024)
+	recv.keepRunning = true
 
-	for this.keepRunning {
+	for recv.keepRunning {
 		jsonBytes, err := serialPortReader.ReadBytes('\n')
 		if err == nil {
 			jsonStr := string(jsonBytes)
@@ -59,14 +61,28 @@ func (this *RocketReceiver) RocketReceiverLoop() (err error) {
 			err = json.Unmarshal(jsonBytes, &readInfo)
 			if err == nil {
 				fmt.Printf("Updating from %s\n", jsonStr)
-				*this.rocketInfo = readInfo
+				*recv.RocketInfo = readInfo
 			} else {
 				fmt.Printf("Could not unmarshal data from serial port %s, data = '%s', err = %v\n",
-					this.port, jsonStr, err)
+					recv.port, jsonStr, err)
 			}
 		} else {
-			fmt.Printf("Got error reading from serial port %s, err %v\n", this.port, err)
+			fmt.Printf("Got error reading from serial port %s, err %v\n", recv.port, err)
 		}
 	}
 	return
+}
+
+func (recv *RocketReceiver) SendLaunchMode() {
+	fmt.Printf("Sending video cmd to rocket\n")
+	written, err := recv.serialPort.Write([]byte("\n\nV\n"))
+	if err != nil {
+		fmt.Printf("Wrote %d bytes, got error %v\n", written, err)
+	} else {
+		fmt.Printf("Wrote %d bytes\n", written)
+	}
+}
+
+func (recv *RocketReceiver) UpdateGPS(gpsInfo nmea.RMC) {
+	recv.GPS = gpsInfo
 }

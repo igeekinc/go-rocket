@@ -8,7 +8,7 @@ import (
 )
 
 type GPSReader struct {
-	rocketInfo  *RocketInfo
+	gpsTracker  GPSTracker
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -16,8 +16,12 @@ type GPSReader struct {
 	keepRunning bool
 }
 
-func InitGPSReader(rocketInfo *RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReader GPSReader, err error) {
-	gpsReader.rocketInfo = rocketInfo
+type GPSTracker interface {
+	UpdateGPS(gpsInfo nmea.RMC)
+}
+
+func InitGPSReader(gpsTracker GPSTracker, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReader GPSReader, err error) {
+	gpsReader.gpsTracker = gpsTracker
 	gpsReader.port = port
 	gpsReader.baudRate = baudRate
 	gpsReader.dataBits = dataBits
@@ -61,7 +65,7 @@ func (this GPSReader) UpdateFromGPSLoop() (err error) {
 					fmt.Printf("Course: %f\n", m.Course)
 					fmt.Printf("Date: %s\n", m.Date)
 					fmt.Printf("Variation: %f\n", m.Variation)
-					this.rocketInfo.UpdateGPS(m)
+					this.gpsTracker.UpdateGPS(m)
 				}
 			}
 		}
