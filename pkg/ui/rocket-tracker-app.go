@@ -62,11 +62,13 @@ type rocketTrackerUI struct {
 
 func (recv *rocketTrackerUI) updateLoop() {
 	for {
-		updateLabelWithGPS(recv.gpsPosLabel, recv.rocketReceiver.RocketInfo.GPS)
-		updateLabelWithGPS(recv.ourPosLabel, recv.rocketReceiver.GPS)
+		updateLabelWithGPS(recv.gpsPosLabel, recv.rocketReceiver.RocketInfo.GPS, recv.rocketReceiver.RocketInfo.Altitude)
+		updateLabelWithGPS(recv.ourPosLabel, recv.rocketReceiver.GPS, 0)
 		distance := core.Distance(recv.rocketReceiver.GPS.Latitude, recv.rocketReceiver.GPS.Longitude,
 			recv.rocketReceiver.RocketInfo.GPS.Latitude, recv.rocketReceiver.RocketInfo.GPS.Longitude)
-		recv.distanceLabel.SetText(fmt.Sprintf("%0f M", distance))
+		distanceStr := fmt.Sprintf("%0f M", distance)
+		fmt.Println(distanceStr)
+		recv.distanceLabel.SetText(distanceStr)
 		if recv.rocketReceiver.RocketInfo.Recording {
 			recv.launchModeStateLabel.SetText("true")
 		} else {
@@ -76,6 +78,13 @@ func (recv *rocketTrackerUI) updateLoop() {
 	}
 }
 
-func updateLabelWithGPS(label *widget.Label, gps nmea.RMC) {
-	label.SetText(fmt.Sprintf("Lat: %06.2f Lon:%06.2f", gps.Latitude, gps.Longitude))
+func updateLabelWithGPS(label *widget.Label, gps nmea.GGA, altitude float64) {
+	labelStr := ""
+	if gps.FixQuality == nmea.Invalid {
+		labelStr = "Invalid GPS"
+	} else {
+		labelStr = fmt.Sprintf("Lat: %09.5f Lon:%09.5f Alt: %.2fM", gps.Latitude, gps.Longitude, altitude)
+	}
+	fmt.Println(labelStr)
+	label.SetText(labelStr)
 }

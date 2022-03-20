@@ -19,7 +19,7 @@ type GroundHTTPServer struct {
 	httpRoot          string
 	httpPort          int
 	receiver          *RocketReceiver
-	previousPositions []nmea.RMC
+	previousPositions []nmea.GGA
 }
 
 // NewGroundHTTPServer creates and run the HTTP server.  It does not return unless the HTTP server has an error
@@ -72,7 +72,7 @@ func (recv *GroundHTTPServer) Serve() error {
 
 type pageInputs struct {
 	CurrentLat, CurrentLong float64
-	PreviousPositions       []nmea.RMC
+	PreviousPositions       []nmea.GGA
 	Recording               bool
 	VideoFile               string
 }

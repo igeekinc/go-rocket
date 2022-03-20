@@ -47,8 +47,8 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 
 	go this.videoStarter(serialPort)
 	this.keepRunning = true
-        
-        go this.videoStarter(serialPort)
+
+	go this.videoStarter(serialPort)
 
 	for this.keepRunning {
 		rj, err := json.Marshal(this.rocketInfo)
@@ -82,8 +82,8 @@ func (this *RocketReporter) videoStarter(serialPort io.Reader) {
 		if text == "V" {
 			videoFile := this.nextVidFile()
 			this.rocketInfo.SetRecording(true, videoFile)
-			video := exec.Command("/usr/bin/libcamera-vid", "-t", "10000",
-				"-o", videoFile)
+			video := exec.Command("/usr/bin/libcamera-vid", "-t", "600000",
+				"--nopreview", "-o", videoFile)
 			fmt.Printf("Starting video, cmd = %v\n", video)
 			video.Run()
 			this.rocketInfo.SetRecording(false, videoFile)

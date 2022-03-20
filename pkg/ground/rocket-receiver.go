@@ -12,7 +12,7 @@ import (
 
 type RocketReceiver struct {
 	RocketInfo  *core.RocketInfo
-	GPS         nmea.RMC
+	GPS         nmea.GGA
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -83,6 +83,6 @@ func (recv *RocketReceiver) SendLaunchMode() {
 	}
 }
 
-func (recv *RocketReceiver) UpdateGPS(gpsInfo nmea.RMC) {
+func (recv *RocketReceiver) UpdateGPS(gpsInfo nmea.GGA) {
 	recv.GPS = gpsInfo
 }

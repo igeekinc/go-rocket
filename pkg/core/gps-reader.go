@@ -17,7 +17,7 @@ type GPSReader struct {
 }
 
 type GPSTracker interface {
-	UpdateGPS(gpsInfo nmea.RMC)
+	UpdateGPS(gpsInfo nmea.GGA)
 }
 
 func InitGPSReader(gpsTracker GPSTracker, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReader GPSReader, err error) {
@@ -53,19 +53,32 @@ func (this GPSReader) UpdateFromGPSLoop() (err error) {
 			fmt.Printf("Raw sentence: %v\n", gpsLine)
 			sentence, err = nmea.Parse(gpsLine)
 			if err == nil {
-				if sentence.DataType() == nmea.TypeRMC {
-					m := sentence.(nmea.RMC)
-					fmt.Printf("Time: %s\n", m.Time)
-					fmt.Printf("Validity: %s\n", m.Validity)
-					fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(m.Latitude))
-					fmt.Printf("Latitude DMS: %s\n", nmea.FormatDMS(m.Latitude))
-					fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(m.Longitude))
-					fmt.Printf("Longitude DMS: %s\n", nmea.FormatDMS(m.Longitude))
-					fmt.Printf("Speed: %f\n", m.Speed)
-					fmt.Printf("Course: %f\n", m.Course)
-					fmt.Printf("Date: %s\n", m.Date)
-					fmt.Printf("Variation: %f\n", m.Variation)
-					this.gpsTracker.UpdateGPS(m)
+				switch sentence.DataType() {
+				/*
+					case nmea.TypeRMC:
+						m := sentence.(nmea.RMC)
+						fmt.Printf("Time: %s\n", m.Time)
+						fmt.Printf("Validity: %s\n", m.Validity)
+						fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(m.Latitude))
+						fmt.Printf("Latitude DMS: %s\n", nmea.FormatDMS(m.Latitude))
+						fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(m.Longitude))
+						fmt.Printf("Longitude DMS: %s\n", nmea.FormatDMS(m.Longitude))
+						fmt.Printf("Speed: %f\n", m.Speed)
+						fmt.Printf("Course: %f\n", m.Course)
+						fmt.Printf("Date: %s\n", m.Date)
+						fmt.Printf("Variation: %f\n", m.Variation)
+						//this.gpsTracker.UpdateGPS(m)
+					case nmea.TypeGSV:
+						v := sentence.(nmea.GSV)
+						//this.gpsTracker.UpdateTracking(v)
+				*/
+				case nmea.TypeGGA:
+					g := sentence.(nmea.GGA)
+					fmt.Printf("Time: %s", g.Time)
+					fmt.Printf("Fix quality: %s", g.FixQuality)
+					fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(g.Latitude))
+					fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(g.Longitude))
+					this.gpsTracker.UpdateGPS(g)
 				}
 			}
 		}
