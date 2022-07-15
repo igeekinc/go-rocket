@@ -25,6 +25,9 @@ func main() {
 	bmpReader := core.NewBMPReader(bus, ri, 0x77)
 	go bmpLoop(bmpReader)
 
+	lsmReader := core.NewLSMReader(bus, ri, 0x19)
+	go lsmLoop(lsmReader)
+
 	gpsReader, err := core.InitGPSReader(ri, "/dev/ttyS0", 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
@@ -48,6 +51,14 @@ func bmpLoop(bmp *core.BMPReader) {
 		log.Fatal(err)
 	}
 }
+
+func lsmLoop(lsm *core.LSMReader) {
+	err := lsm.UpdateFromLSMLoop()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func reporterLoop(gr rocket.RocketReporter) {
 	err := gr.RocketReporterLoop()
 	if err != nil {
