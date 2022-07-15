@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/pkg/errors"
 	"log"
 	"math"
 	i2c2 "periph.io/x/conn/v3/i2c"
@@ -30,7 +31,7 @@ func NewBMPReader(i2cBus i2c2.BusCloser, altitudeTracker AltitudeTracker, bmpI2C
 func (recv *BMPReader) UpdateFromBMPLoop() (err error) {
 	dev, err := bmxx80.NewI2C(recv.i2cBus, recv.bmpI2CAddr, &bmxx80.DefaultOpts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Could not connect to BMP")
 	}
 	for {
 		var env physic.Env
