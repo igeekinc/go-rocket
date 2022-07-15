@@ -17,12 +17,14 @@ func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
 	w := a.NewWindow("Rocket Tracker")
 	//w.SetFullScreen(true)
 	//w.SetContent(widget.NewLabel("Hello World!"))
-	kRocketPosLabel := widget.NewLabel("Rocket Pos: ")
+	kRocketPosLabel := widget.NewLabel("Rocket Pos:")
 	rocketPosLabel := widget.NewLabel("")
-	kOurPosLabel := widget.NewLabel("Our Pos: ")
+	kOurPosLabel := widget.NewLabel("Our Pos:")
 	ourPosLabel := widget.NewLabel("")
-	kDistanceLabel := widget.NewLabel("Distance: ")
+	kDistanceLabel := widget.NewLabel("Distance:")
 	distanceLabel := widget.NewLabel("")
+	kAccelerationLabel := widget.NewLabel("Acceleration:")
+	accelerationLabel := widget.NewLabel("")
 	kLaunchModeLabel := widget.NewLabel("Launch mode: ")
 	launchModeLabel := widget.NewLabel("false")
 	rtu := rocketTrackerUI{
@@ -30,6 +32,7 @@ func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
 		gpsPosLabel:          rocketPosLabel,
 		ourPosLabel:          ourPosLabel,
 		distanceLabel:        distanceLabel,
+		accelerationLabel:    accelerationLabel,
 		launchModeStateLabel: launchModeLabel,
 	}
 	launchButton := widget.NewButton("Launch", func() {
@@ -43,6 +46,8 @@ func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
 		ourPosLabel,
 		kDistanceLabel,
 		distanceLabel,
+		kAccelerationLabel,
+		accelerationLabel,
 		kLaunchModeLabel,
 		launchModeLabel,
 		launchButton)
@@ -57,13 +62,15 @@ type rocketTrackerUI struct {
 	gpsPosLabel          *widget.Label
 	ourPosLabel          *widget.Label
 	distanceLabel        *widget.Label
+	accelerationLabel    *widget.Label
 	launchModeStateLabel *widget.Label
 }
 
 func (recv *rocketTrackerUI) updateLoop() {
 	for {
 		updateLabelWithGPS(recv.gpsPosLabel, recv.rocketReceiver.RocketInfo.GPS, recv.rocketReceiver.RocketInfo.Altitude)
-		updateLabelWithGPS(recv.ourPosLabel, recv.rocketReceiver.GPS, 0)
+		updateLabelWithGPS(recv.ourPosLabel, recv.rocketReceiver.GPS, recv.rocketReceiver.GPS.Altitude)
+
 		distance := core.Distance(recv.rocketReceiver.GPS.Latitude, recv.rocketReceiver.GPS.Longitude,
 			recv.rocketReceiver.RocketInfo.GPS.Latitude, recv.rocketReceiver.RocketInfo.GPS.Longitude)
 		distanceStr := fmt.Sprintf("%0f M", distance)
