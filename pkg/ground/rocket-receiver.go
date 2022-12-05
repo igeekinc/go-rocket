@@ -8,17 +8,19 @@ import (
 	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/jacobsa/go-serial/serial"
 	"io"
+	"time"
 )
 
 type RocketReceiver struct {
-	RocketInfo  *core.RocketInfo
-	GPS         nmea.GGA
-	port        string
-	baudRate    uint
-	dataBits    uint
-	stopBits    uint
-	keepRunning bool
-	serialPort  io.ReadWriteCloser
+	RocketInfo   *core.RocketInfo
+	LastReceived time.Time
+	GPS          nmea.GGA
+	port         string
+	baudRate     uint
+	dataBits     uint
+	stopBits     uint
+	keepRunning  bool
+	serialPort   io.ReadWriteCloser
 }
 
 func InitRocketReceiver(rocketInfo *core.RocketInfo, port string, baudRate uint, dataBits uint, stopBits uint) (*RocketReceiver, error) {
@@ -62,6 +64,8 @@ func (recv *RocketReceiver) RocketReceiverLoop() (err error) {
 			if err == nil {
 				fmt.Printf("Updating from %s\n", jsonStr)
 				*recv.RocketInfo = readInfo
+				recv.LastReceived = time.Now()
+				fmt.Printf("RocketInfo.logtime=%v, now = %v\n", recv.RocketInfo.Logtime, time.Now())
 			} else {
 				fmt.Printf("Could not unmarshal data from serial port %s, data = '%s', err = %v\n",
 					recv.port, jsonStr, err)

@@ -8,7 +8,9 @@ import (
 	"github.com/jacobsa/go-serial/serial"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
+	"strconv"
 	"time"
 )
 
@@ -30,12 +32,18 @@ func InitRocketReporter(rocketInfo *core.RocketInfo, port string, baudRate uint,
 	return rocketReporter, nil
 }
 
-func (this *RocketReporter) RocketReporterLoop() (err error) {
+func (recv *RocketReporter) GetInfo() core.RocketInfo {
+	retInfo := *recv.rocketInfo
+	retInfo.Logtime = time.Now()
+	return retInfo
+}
+
+func (recv *RocketReporter) RocketReporterLoop() (err error) {
 	options := serial.OpenOptions{
-		PortName:        this.port,
-		BaudRate:        this.baudRate,
-		DataBits:        this.dataBits,
-		StopBits:        this.stopBits,
+		PortName:        recv.port,
+		BaudRate:        recv.baudRate,
+		DataBits:        recv.dataBits,
+		StopBits:        recv.stopBits,
 		MinimumReadSize: 4,
 	}
 
@@ -45,13 +53,13 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 	}
 	defer serialPort.Close()
 
-	go this.videoStarter(serialPort)
-	this.keepRunning = true
+	go recv.videoStarter(serialPort)
+	recv.keepRunning = true
 
-	go this.videoStarter(serialPort)
+	go recv.videoStarter(serialPort)
 
-	for this.keepRunning {
-		rj, err := json.Marshal(this.rocketInfo)
+	for recv.keepRunning {
+		rj, err := json.Marshal(recv.GetInfo())
 		if err != nil {
 			return err
 		}
@@ -64,12 +72,15 @@ func (this *RocketReporter) RocketReporterLoop() (err error) {
 			fmt.Printf("Wrote %d bytes and got error %v", bytesWritten, err)
 		}
 		time.Sleep(1 * time.Second)
-
 	}
 	return
 }
 
-func (this *RocketReporter) videoStarter(serialPort io.Reader) {
+const flightTime = 10 * time.Minute
+
+//const flightTime = 10 * time.Second
+
+func (recv *RocketReporter) videoStarter(serialPort io.Reader) error {
 	fmt.Println("====================")
 	fmt.Println("videoStarter running")
 	fmt.Println("====================")
@@ -80,37 +91,74 @@ func (this *RocketReporter) videoStarter(serialPort io.Reader) {
 		fmt.Println(text)
 		fmt.Println("====================")
 		if text == "V" {
-			videoFile := this.nextVidFile()
-			this.rocketInfo.SetRecording(true, videoFile)
-			video := exec.Command("/usr/bin/libcamera-vid", "-t", "600000",
+			videoFile, logFile, err := recv.nextFlightFiles()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Starting logfile = %s\n", logFile)
+			logFinished := make(chan bool)
+			go recv.logFlight(logFinished, logFile, flightTime)
+
+			recv.rocketInfo.SetRecording(true, videoFile)
+			video := exec.Command("/usr/bin/libcamera-vid", "-t", strconv.FormatInt(flightTime.Milliseconds(), 10),
 				"--nopreview", "-o", videoFile)
 			fmt.Printf("Starting video, cmd = %v\n", video)
 			video.Run()
-			this.rocketInfo.SetRecording(false, videoFile)
+			fmt.Printf("Waiting for logger to finish\n")
+			<-logFinished
+			recv.rocketInfo.SetRecording(false, videoFile)
+			fmt.Printf("Finished flight mode\n")
 		}
 	}
+	return nil
 }
 
-const kVidDir = "/videos"
+const logSleepTime = time.Millisecond * 10
 
-func (this *RocketReporter) nextVidFile() string {
-	info, err := ioutil.ReadDir(kVidDir)
+func (recv *RocketReporter) logFlight(finished chan bool, logFile string, duration time.Duration) {
+	endTime := time.Now().Add(duration)
+	logFileOut, err := os.Create(logFile)
+	if err == nil {
+		for time.Now().Before(endTime) {
+			rj, err := json.Marshal(recv.GetInfo())
+			if err == nil {
+				rj = append(rj, '\n')
+				logFileOut.Write(rj)
+			}
+			time.Sleep(logSleepTime)
+		}
+	}
+	fmt.Printf("logFlight finished\n")
+	logFileOut.Close()
+	finished <- true
+}
+
+const kFlightsDir = "/flights"
+
+func (recv *RocketReporter) nextFlightFiles() (vidFile, logFile string, err error) {
+	info, err := ioutil.ReadDir(kFlightsDir)
 	if err != nil {
 		panic(err) // If we're having errors reading the video dir, just bomb out
 	}
-	nextVidNum := 0
+	nextFlightNum := 0
 	for _, curFile := range info {
-		var curVidNum int
-		n, err := fmt.Sscanf(curFile.Name(), "vid%d.mov", &curVidNum)
+		var curFlightNum int
+		n, err := fmt.Sscanf(curFile.Name(), "flightdir%d", &curFlightNum)
 		if err != nil {
 			panic(err)
 		}
 		if n == 1 {
-			if curVidNum > nextVidNum {
-				nextVidNum = curVidNum
+			if curFlightNum > nextFlightNum {
+				nextFlightNum = curFlightNum
 			}
 		}
 	}
-	nextVidNum++
-	return fmt.Sprintf("%s/vid%d.mov", kVidDir, nextVidNum)
+	nextFlightNum++
+	flightDir := fmt.Sprintf("%s/flightdir%d", kFlightsDir, nextFlightNum)
+	err = os.MkdirAll(flightDir, 0777)
+	if err == nil {
+		vidFile = fmt.Sprintf("%s/vid%d.mov", flightDir, nextFlightNum)
+		logFile = fmt.Sprintf("%s/log%d.json", flightDir, nextFlightNum)
+	}
+	return
 }

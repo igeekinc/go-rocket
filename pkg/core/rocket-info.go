@@ -5,9 +5,11 @@ import (
 	"github.com/adrianmo/go-nmea"
 	"periph.io/x/conn/v3/physic"
 	"sync"
+	"time"
 )
 
 type RocketInfoJSON struct {
+	Logtime          time.Time
 	GPS              nmea.GGA
 	Altitude         float64 // Altitude in meters
 	XAcc, YAcc, ZAcc physic.Acceleration
@@ -19,38 +21,38 @@ type RocketInfo struct {
 	lock sync.Mutex
 }
 
-func (this *RocketInfo) UpdateGPS(gps nmea.GGA) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
-	this.GPS = gps
+func (recv *RocketInfo) UpdateGPS(gps nmea.GGA) {
+	recv.lock.Lock()
+	defer recv.lock.Unlock()
+	recv.GPS = gps
 }
 
-func (this *RocketInfo) UpdateAltitude(temperature float64, pressure float64, altitude float64) {
-	this.Altitude = altitude
+func (recv *RocketInfo) UpdateAltitude(temperature float64, pressure float64, altitude float64) {
+	recv.Altitude = altitude
 }
 
-func (this *RocketInfo) UpdateAcceleration(x, y, z physic.Acceleration) {
-	this.XAcc = x
-	this.YAcc = y
-	this.ZAcc = z
+func (recv *RocketInfo) UpdateAcceleration(x, y, z physic.Acceleration) {
+	recv.XAcc = x
+	recv.YAcc = y
+	recv.ZAcc = z
 }
 
-func (this *RocketInfo) SetRecording(recording bool, videoFile string) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
-	this.Recording = recording
-	this.VideoFile = videoFile
+func (recv *RocketInfo) SetRecording(recording bool, videoFile string) {
+	recv.lock.Lock()
+	defer recv.lock.Unlock()
+	recv.Recording = recording
+	recv.VideoFile = videoFile
 }
 
-func (this *RocketInfo) MarshalJSON() ([]byte, error) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
+func (recv *RocketInfo) MarshalJSON() ([]byte, error) {
+	recv.lock.Lock()
+	defer recv.lock.Unlock()
 
-	return json.Marshal(this.RocketInfoJSON)
+	return json.Marshal(recv.RocketInfoJSON)
 }
 
-func (this *RocketInfo) UnmarshalJSON(buf []byte) error {
-	if err := json.Unmarshal(buf, &this.RocketInfoJSON); err != nil {
+func (recv *RocketInfo) UnmarshalJSON(buf []byte) error {
+	if err := json.Unmarshal(buf, &recv.RocketInfoJSON); err != nil {
 		return err
 	}
 	return nil

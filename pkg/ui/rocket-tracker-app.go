@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -17,16 +18,18 @@ func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
 	w := a.NewWindow("Rocket Tracker")
 	//w.SetFullScreen(true)
 	//w.SetContent(widget.NewLabel("Hello World!"))
-	kRocketPosLabel := widget.NewLabel("Rocket Pos:")
+	useGrid := false
+	kRocketPosLabel := widget.NewLabel("Rckt:")
 	rocketPosLabel := widget.NewLabel("")
-	kOurPosLabel := widget.NewLabel("Our Pos:")
+	kOurPosLabel := widget.NewLabel("Us:")
 	ourPosLabel := widget.NewLabel("")
-	kDistanceLabel := widget.NewLabel("Distance:")
+	kDistanceLabel := widget.NewLabel("Dist:")
 	distanceLabel := widget.NewLabel("")
-	kAccelerationLabel := widget.NewLabel("Acceleration:")
+	kAccelerationLabel := widget.NewLabel("Acc:")
 	accelerationLabel := widget.NewLabel("")
-	kLaunchModeLabel := widget.NewLabel("Launch mode: ")
-	launchModeLabel := widget.NewLabel("false")
+	kLaunchModeLabel := widget.NewLabel("Mode: ")
+	launchModeLabel := widget.NewLabel("ready")
+
 	rtu := rocketTrackerUI{
 		rocketReceiver:       rocketReceiver,
 		gpsPosLabel:          rocketPosLabel,
@@ -39,18 +42,40 @@ func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
 		fmt.Println("Launch pressed")
 		rocketReceiver.SendLaunchMode()
 	})
-	infoCanvas := container.New(layout.NewGridLayout(2),
-		kRocketPosLabel,
-		rocketPosLabel,
-		kOurPosLabel,
-		ourPosLabel,
-		kDistanceLabel,
-		distanceLabel,
-		kAccelerationLabel,
-		accelerationLabel,
-		kLaunchModeLabel,
-		launchModeLabel,
-		launchButton)
+
+	var infoCanvas fyne.CanvasObject
+	if useGrid {
+		infoCanvas = container.New(layout.NewGridLayout(2),
+			kRocketPosLabel,
+			rocketPosLabel,
+			kOurPosLabel,
+			ourPosLabel,
+			kDistanceLabel,
+			distanceLabel,
+			kAccelerationLabel,
+			accelerationLabel,
+			kLaunchModeLabel,
+			launchModeLabel,
+			launchButton)
+
+	} else {
+		labelContainer := container.New(layout.NewVBoxLayout(),
+			kRocketPosLabel,
+			kOurPosLabel,
+			kDistanceLabel,
+			kAccelerationLabel,
+			kLaunchModeLabel)
+		infoContainer := container.New(layout.NewVBoxLayout(),
+			rocketPosLabel,
+			ourPosLabel,
+			distanceLabel,
+			accelerationLabel,
+			launchModeLabel)
+		comboInfoContainer := container.New(layout.NewHBoxLayout(),
+			labelContainer, infoContainer)
+		infoCanvas = container.New(layout.NewVBoxLayout(),
+			comboInfoContainer, launchButton)
+	}
 	w.SetContent(infoCanvas)
 
 	go rtu.updateLoop()
@@ -77,9 +102,12 @@ func (recv *rocketTrackerUI) updateLoop() {
 		fmt.Println(distanceStr)
 		recv.distanceLabel.SetText(distanceStr)
 		if recv.rocketReceiver.RocketInfo.Recording {
-			recv.launchModeStateLabel.SetText("true")
+			recv.launchModeStateLabel.SetText("recording")
 		} else {
-			recv.launchModeStateLabel.SetText("false")
+			recv.launchModeStateLabel.SetText("ready")
+		}
+		if time.Now().Sub(recv.rocketReceiver.LastReceived).Seconds() > 10.0 {
+			recv.launchModeStateLabel.SetText("not communicating")
 		}
 		time.Sleep(time.Second) // Would be nicer if we waited on a channel from RocketInfo
 	}

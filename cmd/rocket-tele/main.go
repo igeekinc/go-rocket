@@ -14,7 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bus, err := i2creg.Open("")
+	bus, err := i2creg.Open("/dev/i2c-1")
 	if err != nil {
 		log.Fatal(err)
 	}
