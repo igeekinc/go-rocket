@@ -28,17 +28,18 @@ func main() {
 	lsmReader := core.NewLSMReader(bus, ri, 0x19)
 	go lsmLoop(lsmReader)
 
-	gpsReader, err := core.InitGPSReader(ri, "/dev/ttyS0", 9600, 8, 1)
+	gpsReader, err := core.InitGPSSerialReader(ri, "/dev/ttyS0", 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Starting gpsLoop")
 	go gpsLoop(gpsReader)
 
 	gpsReporter, err := rocket.InitRocketReporter(ri, "/dev/ttyUSB0", 57600, 8, 1)
 	reporterLoop(gpsReporter)
 }
 
-func gpsLoop(gr core.GPSReader) {
+func gpsLoop(gr *core.GPSReader) {
 	err := gr.UpdateFromGPSLoop()
 	if err != nil {
 		log.Fatal(err)

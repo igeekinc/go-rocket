@@ -1,14 +1,20 @@
 package core
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/adrianmo/go-nmea"
-	"github.com/jacobsa/go-serial/serial"
+	"github.com/igeekinc/go-gps-i2c/pkg/gps"
+	"log"
+	"periph.io/x/conn/v3/i2c"
+	"time"
 )
 
 type GPSReader struct {
-	gpsTracker  GPSTracker
+	// A consumer of the GPS info that will be periodically updated - TODO - convert over to using a channel or something
+	// more idiomatic
+	gpsTracker GPSTracker
+	// The GPS device itself
+	gps         gps.GPS
 	port        string
 	baudRate    uint
 	dataBits    uint
@@ -20,68 +26,46 @@ type GPSTracker interface {
 	UpdateGPS(gpsInfo nmea.GGA)
 }
 
-func InitGPSReader(gpsTracker GPSTracker, port string, baudRate uint, dataBits uint, stopBits uint) (gpsReader GPSReader, err error) {
-	gpsReader.gpsTracker = gpsTracker
-	gpsReader.port = port
-	gpsReader.baudRate = baudRate
-	gpsReader.dataBits = dataBits
-	gpsReader.stopBits = stopBits
-	return gpsReader, nil
+func InitGPSSerialReader(gpsTracker GPSTracker, port string, baudRate uint, dataBits uint, stopBits uint) (*GPSReader, error) {
+	gpsSerial, err := gps.NewSerialGPSReader(port, baudRate, dataBits, stopBits)
+	if err != nil {
+		return nil, err
+	}
+	gpsReader := GPSReader{
+		gpsTracker:  gpsTracker,
+		gps:         gpsSerial,
+		keepRunning: true,
+	}
+	return &gpsReader, nil
 }
 
-func (this GPSReader) UpdateFromGPSLoop() (err error) {
-	options := serial.OpenOptions{
-		PortName:        this.port,
-		BaudRate:        this.baudRate,
-		DataBits:        this.dataBits,
-		StopBits:        this.stopBits,
-		MinimumReadSize: 4,
-	}
-
-	this.keepRunning = true
-	serialPort, err := serial.Open(options)
+func InitGPSI2CReader(gpsTracker GPSTracker, bus i2c.BusCloser, opts *gps.Opts) (*GPSReader, error) {
+	gpsI2C, err := gps.NewI2CGPS(bus, opts)
 	if err != nil {
-		return
+		return nil, err
 	}
-	defer serialPort.Close()
-	reader := bufio.NewReader(serialPort)
-	scanner := bufio.NewScanner(reader)
-	for this.keepRunning {
-		for scanner.Scan() {
-			var sentence nmea.Sentence
-			gpsLine := scanner.Text()
-			fmt.Printf("Raw sentence: %v\n", gpsLine)
-			sentence, err = nmea.Parse(gpsLine)
-			if err == nil {
-				switch sentence.DataType() {
-				/*
-					case nmea.TypeRMC:
-						m := sentence.(nmea.RMC)
-						fmt.Printf("Time: %s\n", m.Time)
-						fmt.Printf("Validity: %s\n", m.Validity)
-						fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(m.Latitude))
-						fmt.Printf("Latitude DMS: %s\n", nmea.FormatDMS(m.Latitude))
-						fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(m.Longitude))
-						fmt.Printf("Longitude DMS: %s\n", nmea.FormatDMS(m.Longitude))
-						fmt.Printf("Speed: %f\n", m.Speed)
-						fmt.Printf("Course: %f\n", m.Course)
-						fmt.Printf("Date: %s\n", m.Date)
-						fmt.Printf("Variation: %f\n", m.Variation)
-						//this.gpsTracker.UpdateGPS(m)
-					case nmea.TypeGSV:
-						v := sentence.(nmea.GSV)
-						//this.gpsTracker.UpdateTracking(v)
-				*/
-				case nmea.TypeGGA:
-					g := sentence.(nmea.GGA)
-					fmt.Printf("Time: %s", g.Time)
-					fmt.Printf("Fix quality: %s", g.FixQuality)
-					fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(g.Latitude))
-					fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(g.Longitude))
-					this.gpsTracker.UpdateGPS(g)
-				}
-			}
+	gpsReader := GPSReader{
+		gpsTracker:  gpsTracker,
+		gps:         gpsI2C,
+		keepRunning: true,
+	}
+	return &gpsReader, nil
+}
+
+func (recv *GPSReader) UpdateFromGPSLoop() (err error) {
+	for recv.keepRunning {
+		log.Printf("Getting GPS local fix")
+		g, err := recv.gps.NextFix()
+		if err != nil {
+			log.Printf("GPS error - err = %v\n", err)
+			time.Sleep(time.Second)
+			continue
 		}
+		fmt.Printf("Time: %s", g.Time)
+		fmt.Printf("Fix quality: %s", g.FixQuality)
+		fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(g.Latitude))
+		fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(g.Longitude))
+		recv.gpsTracker.UpdateGPS(g)
 	}
 	return nil
 }

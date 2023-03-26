@@ -22,11 +22,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	gpsReader, err := core.InitGPSReader(rocketReceiver, gpsTTY, 9600, 8, 1)
+	gpsReader, err := core.InitGPSSerialReader(rocketReceiver, gpsTTY, 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	log.Println("Calling gpsLoop")
 	go gpsLoop(gpsReader)
 
 	go receiverLoop(rocketReceiver)
@@ -37,7 +37,8 @@ func main() {
 	ui.RunRocketTrackerUI(rocketReceiver)
 }
 
-func gpsLoop(gr core.GPSReader) {
+func gpsLoop(gr *core.GPSReader) {
+	log.Println("Calling UpdateFromGPSLoop")
 	err := gr.UpdateFromGPSLoop()
 	if err != nil {
 		log.Fatal(err)
