@@ -100,8 +100,15 @@ func (recv *RocketReporter) videoStarter(serialPort io.Reader) error {
 			go recv.logFlight(logFinished, logFile, flightTime)
 
 			recv.rocketInfo.SetRecording(true, videoFile)
-			video := exec.Command("/usr/bin/libcamera-vid", "-t", strconv.FormatInt(flightTime.Milliseconds(), 10),
-				"--nopreview", "-o", videoFile)
+			video := exec.Command("/usr/bin/libcamera-vid",
+				"-t", strconv.FormatInt(flightTime.Milliseconds(), 10),
+				"--nopreview",
+				"--width", "1920",
+				"--height", "1080",
+				"--framerate", "24",
+				"-o", videoFile)
+			video.Stdout = os.Stdout
+			video.Stderr = os.Stderr
 			fmt.Printf("Starting video, cmd = %v\n", video)
 			video.Run()
 			fmt.Printf("Waiting for logger to finish\n")
@@ -154,11 +161,11 @@ func (recv *RocketReporter) nextFlightFiles() (vidFile, logFile string, err erro
 		}
 	}
 	nextFlightNum++
-	flightDir := fmt.Sprintf("%s/flightdir%d", kFlightsDir, nextFlightNum)
+	flightDir := fmt.Sprintf("%s/flightdir%03d", kFlightsDir, nextFlightNum)
 	err = os.MkdirAll(flightDir, 0777)
 	if err == nil {
-		vidFile = fmt.Sprintf("%s/vid%d.mov", flightDir, nextFlightNum)
-		logFile = fmt.Sprintf("%s/log%d.json", flightDir, nextFlightNum)
+		vidFile = fmt.Sprintf("%s/vid%03d.mov", flightDir, nextFlightNum)
+		logFile = fmt.Sprintf("%s/log%03d.json", flightDir, nextFlightNum)
 	}
 	return
 }

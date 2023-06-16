@@ -61,10 +61,14 @@ func (recv *GPSReader) UpdateFromGPSLoop() (err error) {
 			time.Sleep(time.Second)
 			continue
 		}
-		fmt.Printf("Time: %s", g.Time)
-		fmt.Printf("Fix quality: %s", g.FixQuality)
+		fmt.Printf("Time: %s\n", g.Time)
+		fmt.Printf("Fix quality: %s\n", g.FixQuality)
 		fmt.Printf("Latitude GPS: %s\n", nmea.FormatGPS(g.Latitude))
 		fmt.Printf("Longitude GPS: %s\n", nmea.FormatGPS(g.Longitude))
+		lastGSVTime, lastGSV := recv.gps.LastGSV()
+		fmt.Printf("Last GSV time:%v\n", lastGSVTime)
+		fmt.Printf("Num satellites: %d\n", lastGSV.NumberSVsInView)
+		fmt.Printf("Satellite info: %v\n", lastGSV.Info)
 		recv.gpsTracker.UpdateGPS(g)
 	}
 	return nil
