@@ -3,7 +3,7 @@ module github.com/igeekinc/go-rocket
 go 1.13
 
 require (
-	fyne.io/fyne/v2 v2.1.3
+	fyne.io/fyne/v2 v2.3.5
 	github.com/adrianmo/go-nmea v1.7.0
 	github.com/bskari/go-lsm303 v0.0.0-20200927082938-3432d22cb4f1
 	github.com/igeekinc/go-gps-i2c v0.0.0-20221002190116-ae4bfee6c7f5
