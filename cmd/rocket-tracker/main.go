@@ -1,28 +1,55 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/igeekinc/go-rocket/pkg/core"
 	"github.com/igeekinc/go-rocket/pkg/ground"
 	"github.com/igeekinc/go-rocket/pkg/ui"
 	"log"
 	"os"
-	"strconv"
 )
 
 func main() {
+	goRocketTTY := flag.String("go-rocket-tty", "", "TTY with input data from a go-rocket rocket-tele stream")
+	gpsTTY := flag.String("gps-tty", "", "TTY connected to tracker console/handheld's GPS")
+	gpsTrackerTTY := flag.String("gps-tracker-tty", "", "TTY connected to rocket GPS only tracker")
+	baudRate := flag.Int("baud-rate", 57600, "Baud rate from rocket")
 
-	tty := os.Args[1]
-	baudRate, _ := strconv.Atoi(os.Args[2])
+	flag.Parse()
 
-	gpsTTY := os.Args[3]
+	if gpsTTY == nil || *gpsTTY == "" {
+		fmt.Println("Must provide a GPS TTY")
+		flag.Usage()
+		os.Exit(1)
+	}
 
+	if (goRocketTTY == nil || *goRocketTTY == "") && (gpsTrackerTTY == nil || *gpsTrackerTTY == "") {
+		fmt.Println("Must provide a Go rocket tracker TTY or a GPS tracker TTY")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if goRocketTTY != nil && *goRocketTTY != "" && gpsTrackerTTY != nil && *gpsTrackerTTY != "" {
+		fmt.Println("Cannot provide both a Go rocket tracker TTY and a GPS tracker TTY")
+		flag.Usage()
+		os.Exit(1)
+	}
 	ri := &core.RocketInfo{}
 
-	rocketReceiver, err := ground.InitRocketReceiver(ri, tty, uint(baudRate), 8, 1)
-	if err != nil {
-		log.Fatal(err)
+	var err error
+	var rocketReceiver *ground.RocketReceiver
+	if goRocketTTY != nil {
+		rocketReceiver, err = ground.InitRocketReceiver(ri, *goRocketTTY, uint(*baudRate), 8, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-	gpsReader, err := core.InitGPSSerialReader(rocketReceiver, gpsTTY, 9600, 8, 1)
+
+	if rocketReceiver == nil {
+
+	}
+	gpsReader, err := core.InitGPSSerialReader(rocketReceiver, *gpsTTY, 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
