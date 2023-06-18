@@ -13,26 +13,26 @@ import (
 
 /*
 This is the HTTP server that runs on the ground.  It is used to show the position of the rocket
- */
+*/
 
 type GroundHTTPServer struct {
-	httpRoot string
-	httpPort int
-	receiver * RocketReceiver
-	previousPositions []nmea.RMC
+	httpRoot          string
+	httpPort          int
+	receiver          *RocketReceiver
+	previousPositions []nmea.GGA
 }
 
 // NewGroundHTTPServer creates and run the HTTP server.  It does not return unless the HTTP server has an error
-func NewGroundHTTPServer(httpRoot string, httpPort int, receiver * RocketReceiver) *GroundHTTPServer {
+func NewGroundHTTPServer(httpRoot string, httpPort int, receiver *RocketReceiver) *GroundHTTPServer {
 	ghs := GroundHTTPServer{
-		httpRoot:   httpRoot,
-		httpPort:   httpPort,
+		httpRoot: httpRoot,
+		httpPort: httpPort,
 		receiver: receiver,
 	}
 	http.HandleFunc("/", ghs.indexPage)
 
 	requestMap := map[string]func(writer http.ResponseWriter, request *http.Request){
-		"video":func(writer http.ResponseWriter, request *http.Request) {
+		"video": func(writer http.ResponseWriter, request *http.Request) {
 			ghs.video(writer, request)
 		},
 	}
@@ -43,15 +43,15 @@ func NewGroundHTTPServer(httpRoot string, httpPort int, receiver * RocketReceive
 	return &ghs
 }
 
-func (recv * GroundHTTPServer) UpdateGPSLoop() {
-	for (true) {
-		curPos := recv.receiver.rocketInfo.GPS
+func (recv *GroundHTTPServer) UpdateGPSLoop() {
+	for true {
+		curPos := recv.receiver.RocketInfo.GPS
 		appendPos := true
 		if len(recv.previousPositions) > 0 {
-			ourPos := recv.previousPositions[len(recv.previousPositions) - 1]
+			ourPos := recv.previousPositions[len(recv.previousPositions)-1]
 			distance := core.Distance(ourPos.Latitude, ourPos.Longitude, curPos.Latitude, curPos.Longitude)
 			if distance < 10.0 {
-				appendPos = false	// We don't want to keep the little movements
+				appendPos = false // We don't want to keep the little movements
 			}
 		}
 		if appendPos {
@@ -60,36 +60,41 @@ func (recv * GroundHTTPServer) UpdateGPSLoop() {
 				recv.previousPositions = recv.previousPositions[1:]
 			}
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
 // Starts the HTTP server - will not return unless there is a major error
-func (recv * GroundHTTPServer) Serve() error {
+func (recv *GroundHTTPServer) Serve() error {
 	go recv.UpdateGPSLoop()
 	return http.ListenAndServe(fmt.Sprintf(":%d", recv.httpPort), nil)
 }
 
 type pageInputs struct {
 	CurrentLat, CurrentLong float64
-	PreviousPositions []nmea.RMC
+	PreviousPositions       []nmea.GGA
+	Recording               bool
+	VideoFile               string
 }
 
-func (recv * GroundHTTPServer) indexPage(writer http.ResponseWriter, request *http.Request) {
+func (recv *GroundHTTPServer) indexPage(writer http.ResponseWriter, request *http.Request) {
 	template, err := template.ParseFiles(path.Join(recv.httpRoot, "index.html"))
 	if err != nil {
 
 	}
-	currentPos := recv.previousPositions[len(recv.previousPositions) - 1]
-	pi := pageInputs {
-		CurrentLat: currentPos.Latitude,
-		CurrentLong: currentPos.Longitude,
+	currentPos := recv.previousPositions[len(recv.previousPositions)-1]
+	pi := pageInputs{
+		CurrentLat:        currentPos.Latitude,
+		CurrentLong:       currentPos.Longitude,
 		PreviousPositions: recv.previousPositions,
+		Recording:         recv.receiver.RocketInfo.Recording,
+		VideoFile:         recv.receiver.RocketInfo.VideoFile,
 	}
 
 	template.Execute(writer, &pi)
 }
 
-func (recv * GroundHTTPServer) video(writer http.ResponseWriter, request *http.Request) {
-	recv.receiver.serialPort.Write([]byte("V\n"))
+func (recv *GroundHTTPServer) video(writer http.ResponseWriter, request *http.Request) {
+	recv.receiver.SendLaunchMode()
+	http.Redirect(writer, request, "/index.html", http.StatusSeeOther)
 }
