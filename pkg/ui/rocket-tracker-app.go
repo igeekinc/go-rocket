@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
+func RunRocketTrackerUI(rocketReceiver ground.RocketReceiver) {
 	a := app.New()
 	w := a.NewWindow("Rocket Tracker")
 	//w.SetFullScreen(true)
@@ -83,7 +83,7 @@ func RunRocketTrackerUI(rocketReceiver *ground.RocketReceiver) {
 }
 
 type rocketTrackerUI struct {
-	rocketReceiver       *ground.RocketReceiver
+	rocketReceiver       ground.RocketReceiver
 	gpsPosLabel          *widget.Label
 	ourPosLabel          *widget.Label
 	distanceLabel        *widget.Label
@@ -93,20 +93,20 @@ type rocketTrackerUI struct {
 
 func (recv *rocketTrackerUI) updateLoop() {
 	for {
-		updateLabelWithGPS(recv.gpsPosLabel, recv.rocketReceiver.RocketInfo.GPS, recv.rocketReceiver.RocketInfo.Altitude)
-		updateLabelWithGPS(recv.ourPosLabel, recv.rocketReceiver.GPS, recv.rocketReceiver.GPS.Altitude)
+		updateLabelWithGPS(recv.gpsPosLabel, recv.rocketReceiver.GetRocketInfo().GPS, recv.rocketReceiver.GetRocketInfo().Altitude)
+		updateLabelWithGPS(recv.ourPosLabel, recv.rocketReceiver.GetLocalGPS(), recv.rocketReceiver.GetLocalGPS().Altitude)
 
-		distance := core.Distance(recv.rocketReceiver.GPS.Latitude, recv.rocketReceiver.GPS.Longitude,
-			recv.rocketReceiver.RocketInfo.GPS.Latitude, recv.rocketReceiver.RocketInfo.GPS.Longitude)
+		distance := core.Distance(recv.rocketReceiver.GetLocalGPS().Latitude, recv.rocketReceiver.GetLocalGPS().Longitude,
+			recv.rocketReceiver.GetRocketInfo().GPS.Latitude, recv.rocketReceiver.GetRocketInfo().GPS.Longitude)
 		distanceStr := fmt.Sprintf("%0f M", distance)
 		fmt.Println(distanceStr)
 		recv.distanceLabel.SetText(distanceStr)
-		if recv.rocketReceiver.RocketInfo.Recording {
+		if recv.rocketReceiver.GetRocketInfo().Recording {
 			recv.launchModeStateLabel.SetText("recording")
 		} else {
 			recv.launchModeStateLabel.SetText("ready")
 		}
-		if time.Now().Sub(recv.rocketReceiver.LastReceived).Seconds() > 10.0 {
+		if time.Now().Sub(recv.rocketReceiver.GetLastReceived()).Seconds() > 10.0 {
 			recv.launchModeStateLabel.SetText("not communicating")
 		}
 		time.Sleep(time.Second) // Would be nicer if we waited on a channel from RocketInfo

@@ -38,17 +38,24 @@ func main() {
 	ri := &core.RocketInfo{}
 
 	var err error
-	var rocketReceiver *ground.RocketReceiver
-	if goRocketTTY != nil {
-		rocketReceiver, err = ground.InitRocketReceiver(ri, *goRocketTTY, uint(*baudRate), 8, 1)
+	var rocketReceiver ground.RocketReceiver
+	if goRocketTTY != nil && *goRocketTTY != "" {
+		fmt.Printf("Initialize remote go-rocket tracker on %s\n", *goRocketTTY)
+		rocketReceiver, err = ground.InitGoRocketReceiver(ri, *goRocketTTY, uint(*baudRate), 8, 1)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	if rocketReceiver == nil {
+	if gpsTrackerTTY != nil && *gpsTrackerTTY != "" {
+		fmt.Printf("Initialize GPS Only tracker on %s\n", *gpsTrackerTTY)
 
+		rocketReceiver, err = ground.InitGPSRocketReceiver(ri, *gpsTrackerTTY, uint(*baudRate), 8, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+
 	gpsReader, err := core.InitGPSSerialReader(rocketReceiver, *gpsTTY, 9600, 8, 1)
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +79,7 @@ func gpsLoop(gr *core.GPSReader) {
 	}
 }
 
-func receiverLoop(rec *ground.RocketReceiver) {
+func receiverLoop(rec ground.RocketReceiver) {
 	err := rec.RocketReceiverLoop()
 	if err != nil {
 		log.Fatal(err)

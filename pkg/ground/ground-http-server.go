@@ -18,12 +18,12 @@ This is the HTTP server that runs on the ground.  It is used to show the positio
 type GroundHTTPServer struct {
 	httpRoot          string
 	httpPort          int
-	receiver          *RocketReceiver
+	receiver          RocketReceiver
 	previousPositions []nmea.GGA
 }
 
 // NewGroundHTTPServer creates and run the HTTP server.  It does not return unless the HTTP server has an error
-func NewGroundHTTPServer(httpRoot string, httpPort int, receiver *RocketReceiver) *GroundHTTPServer {
+func NewGroundHTTPServer(httpRoot string, httpPort int, receiver RocketReceiver) *GroundHTTPServer {
 	ghs := GroundHTTPServer{
 		httpRoot: httpRoot,
 		httpPort: httpPort,
@@ -45,7 +45,7 @@ func NewGroundHTTPServer(httpRoot string, httpPort int, receiver *RocketReceiver
 
 func (recv *GroundHTTPServer) UpdateGPSLoop() {
 	for true {
-		curPos := recv.receiver.RocketInfo.GPS
+		curPos := recv.receiver.GetRocketInfo().GPS
 		appendPos := true
 		if len(recv.previousPositions) > 0 {
 			ourPos := recv.previousPositions[len(recv.previousPositions)-1]
@@ -87,8 +87,8 @@ func (recv *GroundHTTPServer) indexPage(writer http.ResponseWriter, request *htt
 		CurrentLat:        currentPos.Latitude,
 		CurrentLong:       currentPos.Longitude,
 		PreviousPositions: recv.previousPositions,
-		Recording:         recv.receiver.RocketInfo.Recording,
-		VideoFile:         recv.receiver.RocketInfo.VideoFile,
+		Recording:         recv.receiver.GetRocketInfo().Recording,
+		VideoFile:         recv.receiver.GetRocketInfo().VideoFile,
 	}
 
 	template.Execute(writer, &pi)
